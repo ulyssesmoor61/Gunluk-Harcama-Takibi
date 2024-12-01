@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Günlük Harcama Takibi</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+        .form-group label {
+            flex: 1;
+            text-align: left;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .form-group input {
+            width: 60%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .expense-form-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+        .expense-form-group label {
+            flex: 1;
+            text-align: left;
+            font-size: 14px;
+        }
+        .expense-form-group input {
+            width: 60%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        td {
+            background-color: #f1f3f5;
+        }
+        tr:nth-child(even) td {
+            background-color: #e9ecef;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .remaining {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Günlük Harcama Takibi</h1>
+    
+    <!-- Harcama Ekleme Formu -->
+    <form id="expenseForm">
+        <div class="form-group">
+            <label for="dailyIncome">Günlük Alınan Para (₺):</label>
+            <input type="number" id="dailyIncome" placeholder="₺" min="0" required>
+        </div>
+        <div class="expense-form-group">
+            <label for="yemek">Yemek:</label>
+            <input type="number" id="yemek" placeholder="₺" min="0">
+        </div>
+        <div class="expense-form-group">
+            <label for="kirtasiye">Kırtasiye Ürünleri:</label>
+            <input type="number" id="kirtasiye" placeholder="₺" min="0">
+        </div>
+        <div class="expense-form-group">
+            <label for="ev">Ev İçin Harcanan Miktar:</label>
+            <input type="number" id="ev" placeholder="₺" min="0">
+        </div>
+        <div class="expense-form-group">
+            <label for="eglence">Eğlence:</label>
+            <input type="number" id="eglence" placeholder="₺" min="0">
+        </div>
+        <div class="expense-form-group">
+            <label for="borc">Borç:</label>
+            <input type="number" id="borc" placeholder="₺" min="0">
+        </div>
+        <div class="expense-form-group">
+            <label for="ekGiderler">Ek Giderler:</label>
+            <input type="number" id="ekGiderler" placeholder="₺" min="0">
+        </div>
+        <button type="button" onclick="addExpenses()">Harcama Ekle</button>
+    </form>
+
+    <h2>Harcamalar Tablosu</h2>
+    <table id="expenseTable">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>Günlük Alınan Para</th>
+                <th>Yemek</th>
+                <th>Kırtasiye Ürünleri</th>
+                <th>Ev İçin Harcanan Miktar</th>
+                <th>Eğlence</th>
+                <th>Borç</th>
+                <th>Ek Giderler</th>
+                <th>Harcanan Para</th> <!-- Yeni Harcanan Para Sütunu -->
+                <th>Kalan Para</th>
+                <th>Sil</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Harcama satırları buraya eklenecek -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const tableBody = document.querySelector('#expenseTable tbody');
+
+    // Sayfa yüklendiğinde verileri yükle
+    window.onload = () => {
+        const savedExpenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        savedExpenses.forEach(expense => {
+            addRow(expense);
+        });
+    }
+
+    // Harcama ekleme
+    function addExpenses() {
+        const dailyIncome = parseFloat(document.getElementById('dailyIncome').value) || 0;
+
+        if (dailyIncome <= 0) {
+            alert("Lütfen geçerli bir günlük para miktarı girin.");
+            return;
+        }
+
+        const currentDate = new Date().toLocaleDateString();
+
+        // Aynı tarihte harcama olup olmadığını kontrol et
+        if ([...tableBody.rows].some(row => row.cells[0].textContent === currentDate)) {
+            alert("Bu tarih için zaten bir harcama kaydı var!");
+            return;
+        }
+
+        // Harcama verilerini al
+        const expense = {
+            date: currentDate,
+            dailyIncome,
+            yemek: parseFloat(document.getElementById('yemek').value) || 0,
+            kirtasiye: parseFloat(document.getElementById('kirtasiye').value) || 0,
+            ev: parseFloat(document.getElementById('ev').value) || 0,
+            eglence: parseFloat(document.getElementById('eglence').value) || 0,
+            borc: parseFloat(document.getElementById('borc').value) || 0,
+            ekGiderler: parseFloat(document.getElementById('ekGiderler').value) || 0
+        };
+
+        // Toplam harcamayı hesapla
+        const totalExpense = expense.yemek + expense.kirtasiye + expense.ev + expense.eglence + expense.borc + expense.ekGiderler;
+        const remainingAmount = expense.dailyIncome - totalExpense;
+
+        if (remainingAmount < 0) {
+            alert("Harcamalar günlük alınan paradan fazla olamaz!");
+            return;
+        }
+
+        expense.remaining = remainingAmount;
+        expense.totalExpense = totalExpense; // Harcanan toplam miktarı ekliyoruz
+        addRow(expense);
+
+        // Harcama alanlarını sıfırlama
+        resetExpenseFields();
+
+        // Harcamaları kaydetme
+        saveExpenses();
+    }
+
+    // Tabloya yeni satır ekleme
+    function addRow(expense) {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+            <td>${expense.date}</td>
+            <td>₺${expense.dailyIncome.toFixed(2)}</td>
+            <td>₺${expense.yemek.toFixed(2)}</td>
+            <td>₺${expense.kirtasiye.toFixed(2)}</td>
+            <td>₺${expense.ev.toFixed(2)}</td>
+            <td>₺${expense.eglence.toFixed(2)}</td>
+            <td>₺${expense.borc.toFixed(2)}</td>
+            <td>₺${expense.ekGiderler.toFixed(2)}</td>
+            <td>₺${expense.totalExpense.toFixed(2)}</td> <!-- Harcanan Para -->
+            <td class="remaining">₺${expense.remaining.toFixed(2)}</td>
+            <td><button class="delete-btn" onclick="deleteRow(this)">Sil</button></td>
+        `;
+    }
+
+    // Satır silme
+    function deleteRow(button) {
+        const row = button.closest('tr');
+        row.remove();
+        saveExpenses();
+    }
+
+    // Verileri localStorage'a kaydetme
+    function saveExpenses() {
+        const expenses = [...tableBody.rows].map(row => {
+            const cells = row.cells;
+            return {
+                date: cells[0].textContent,
+                dailyIncome: parseFloat(cells[1].textContent.replace('₺', '')),
+                yemek: parseFloat(cells[2].textContent.replace('₺', '')),
+                kirtasiye: parseFloat(cells[3].textContent.replace('₺', '')),
+                ev: parseFloat(cells[4].textContent.replace('₺', '')),
+                eglence: parseFloat(cells[5].textContent.replace('₺', '')),
+                borc: parseFloat(cells[6].textContent.replace('₺', '')),
+                ekGiderler: parseFloat(cells[7].textContent.replace('₺', '')),
+                totalExpense: parseFloat(cells[8].textContent.replace('₺', '')),
+                remaining: parseFloat(cells[9].textContent.replace('₺', ''))
+            };
+        });
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+    }
+
+    // Harcama alanlarını sıfırlama
+    function resetExpenseFields() {
+        document.getElementById('yemek').value = '';
+        document.getElementById('kirtasiye').value = '';
+        document.getElementById('ev').value = '';
+        document.getElementById('eglence').value = '';
+        document.getElementById('borc').value = '';
+        document.getElementById('ekGiderler').value = '';
+        document.getElementById('dailyIncome').value = '';
+    }
+</script>
+
+</body>
+</html>
